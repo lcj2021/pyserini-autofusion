@@ -136,6 +136,8 @@ topics_mapping = {
     'epidemic-qa-consumer-prelim': 'EPIDEMIC_QA_CONSUMER_PRELIM',
     'dpr-nq-dev': 'DPR_NQ_DEV',
     'dpr-nq-test': 'DPR_NQ_TEST',
+    'dpr-nq-train': 'DPR_NQ_TRAIN',
+    'dpr-nq-train-slim': 'DPR_NQ_TRAIN_SLIM',
     'dpr-trivia-dev': 'DPR_TRIVIA_DEV',
     'dpr-trivia-test': 'DPR_TRIVIA_TEST',
     'dpr-wq-test': 'DPR_WQ_TEST',

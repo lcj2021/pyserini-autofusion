@@ -131,11 +131,13 @@ def download_and_unpack_index(url, index_directory='indexes', local_filename=Fal
         if os.path.exists(local_tarball):
             os.remove(local_tarball)
     else:
+        index_directory = os.path.join(get_cache_home(), index_directory)
         local_tarball = os.path.join(index_directory, f'{index_name}.tar.gz')
         index_path = os.path.join(index_directory, f'{index_name}')
 
     # Check to see if index already exists, if so, simply return (quietly) unless force=True, in which case we remove
     # index and download fresh copy.
+    print(f'checking path: {index_path}...')
     if os.path.exists(index_path):
         if not force:
             if verbose:
@@ -232,7 +234,7 @@ def download_prebuilt_index(index_name, force=False, verbose=True, mirror=None):
         local_filename = target_index['filename'] if 'filename' in target_index else None
         try:
             return download_and_unpack_index(url, local_filename=local_filename,
-                                             prebuilt=True, md5=index_md5, verbose=verbose)
+                                             prebuilt=False, md5=index_md5, verbose=verbose)
         except (HTTPError, URLError) as e:
             print(f'Unable to download pre-built index at {url}, trying next URL...')
     raise ValueError(f'Unable to download pre-built index at any known URLs.')

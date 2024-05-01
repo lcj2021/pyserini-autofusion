@@ -235,6 +235,26 @@ QUERY_INFO = {
         "total_queries": 3610,
         "downloaded": False
     },
+    "dpr_multi-nq-train": {
+        "description": "Natural Question train set questions encoded by DPR question encoder trained on multiset",
+        "urls": [
+            "/dk/rag-dataset/queries/query-embedding-dpr_multi-nq-train-20240429-9323ec.tar.gz",
+        ],
+        "md5": "fabc40f467c7f2262628ce1e135b0337",
+        "size (bytes)": 250138521,
+        "total_queries": 79168,
+        "downloaded": False
+    },
+      "dpr_multi-nq-train-slim": {
+        "description": "Natural Question train set questions encoded by DPR question encoder trained on multiset",
+        "urls": [
+            "/dk/rag-dataset/queries/query-embedding-dpr_multi-nq-train-slim-20240429-9323ec.tar.gz",
+        ],
+        "md5": "d9c57f476b7bb281a36612649b3c111f",
+        "size (bytes)": 10365005,
+        "total_queries": 1024,
+        "downloaded": False
+    },
     "ance_multi-nq-dev": {
         "description": "Natural Question dev set questions encoded by ANCE question encoder trained on multiset",
         "urls": [

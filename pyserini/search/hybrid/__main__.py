@@ -164,7 +164,13 @@ if __name__ == '__main__':
     with output_writer:
         batch_topics = list()
         batch_topic_ids = list()
-        for index, (topic_id, text) in enumerate(tqdm(query_iterator, total=len(topics.keys()))):
+
+        nq = 12
+        num_queries = round(len(topics.keys()) * nq) if nq <= 1 else nq
+        num_finished = 0
+        for index, (topic_id, text) in enumerate(tqdm(query_iterator, total=num_queries)):
+            if num_finished >= num_queries:
+                break
             if args.run.batch_size <= 1 and args.run.threads <= 1:
                 hits = hsearcher.search(text, args.fusion.hits, args.run.hits, args.fusion.alpha, args.fusion.normalization, args.fusion.weight_on_dense)
                 results = [(topic_id, hits)]
@@ -172,7 +178,7 @@ if __name__ == '__main__':
                 batch_topic_ids.append(str(topic_id))
                 batch_topics.append(text)
                 if (index + 1) % args.run.batch_size == 0 or \
-                        index == len(topics.keys()) - 1:
+                        index == num_queries - 1:
                     results = hsearcher.batch_search(
                         batch_topics, batch_topic_ids, args.fusion.hits, args.run.hits, args.run.threads,
                         args.fusion.alpha, args.fusion.normalization, args.fusion.weight_on_dense)
@@ -181,8 +187,9 @@ if __name__ == '__main__':
                     batch_topics.clear()
                 else:
                     continue
-
+            
             for topic, hits in results:
                 output_writer.write(topic, hits)
+            num_finished += len(results)
 
             results.clear()

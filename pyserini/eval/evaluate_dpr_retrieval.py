@@ -249,20 +249,25 @@ def evaluate_retrieval(retrieval_file, topk, regex=False):
         contexts = retrieval[qid]['contexts']
         has_ans_idx = max_k  # first index in contexts that has answers
 
+        num_hit = 0
         for idx, ctx in enumerate(contexts):
             if idx >= max_k:
                 break
             if 'has_answer' in ctx:
                 if ctx['has_answer']:
                     has_ans_idx = idx
-                    break
+                    num_hit += 1
+                    # break
             else:
                 text = ctx['text'].split('\n')[1]  # [0] is title, [1] is text
                 if has_answers(text, answers, tokenizer, regex):
                     has_ans_idx = idx
-                    break
+                    num_hit += 1
+                    # break
 
         for k in topk:
+            if num_hit == 0:
+              print(f'qid: {qid}\tTop{k}\thas_answer: {num_hit}')
             accuracy[k].append(0 if has_ans_idx >= k else 1)
 
     for k in topk:

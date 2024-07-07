@@ -50,44 +50,31 @@ if __name__ == '__main__':
     if not searcher:
         exit()
 
-    retrieval = {}
     tokenizer = SimpleTokenizer()
-    # with open(args.input) as f_in:
-    #     for line in tqdm(f_in.readlines()):
-    #         question_id, _, doc_id, _, score, _ = line.strip().split()
-    #         question_id = int(question_id)
-    #         question = qas[question_id]['title']
-    #         answers = qas[question_id]['answers']
-    #         if answers[0] == '"':
-    #             answers = answers[1:-1].replace('""', '"')
-    #         answers = eval(answers)
-    #         if args.combine_title_text:
-    #             passage = json.loads(searcher.doc(doc_id).raw())
-    #             ctx = passage['title'] + "\n" + passage['text']
-    #         else:
-    #             ctx = json.loads(searcher.doc(doc_id).raw())['contents']
-    #         if question_id not in retrieval:
-    #             retrieval[question_id] = {'question': question, 'answers': answers, 'contexts': []}
-    #         title, text = ctx.split('\n')
-    #         answer_exist = has_answers(text, answers, tokenizer, args.regex)
-    #         if args.store_raw:
-    #             retrieval[question_id]['contexts'].append(
-    #                 {'docid': doc_id,
-    #                  'score': score,
-    #                  'text': ctx,
-    #                  'has_answer': answer_exist}
-    #             )
-    #         else:
-    #             retrieval[question_id]['contexts'].append(
-    #                 {'docid': doc_id, 'score': score, 'has_answer': answer_exist}
-    #             )
 
-    from concurrent.futures import ThreadPoolExecutor
+    import concurrent.futures
 
-    with open(args.input) as f_in:
-        data = f_in.readlines()
+    from tqdm import tqdm
 
-    def process_line(line):
+    import itertools
+
+    def read_lines(start_line, end_line):
+        with open(args.input, 'r') as f:
+            selected_lines = list(itertools.islice(f, start_line, end_line))
+            return selected_lines
+        
+    from multiprocessing import Manager, Process, Lock
+
+    manager = Manager()
+    retrieval = manager.dict()
+    doc_contents = manager.dict()
+    locks = manager.dict()
+
+    def read_doc_content(doc_id):
+        if doc_id not in doc_contents:
+            doc_contents[doc_id] = json.loads(searcher.doc(doc_id).raw())
+
+    def process_line(line, retrieval):
         question_id, _, doc_id, _, score, _ = line.strip().split()
         question_id = int(question_id)
         question = qas[question_id]['title']
@@ -95,15 +82,27 @@ if __name__ == '__main__':
         if answers[0] == '"':
             answers = answers[1:-1].replace('""', '"')
         answers = eval(answers)
+        # print(f'{question_id} {question} {doc_id} {score}')
+        
         if args.combine_title_text:
-            passage = json.loads(searcher.doc(doc_id).raw())
-            ctx = passage['title'] + "\n" + passage['text']
+            # read_doc_content(doc_id)
+            ctx = doc_contents[doc_id]['title'] + "\n" + doc_contents[doc_id]['text']
         else:
-            ctx = json.loads(searcher.doc(doc_id).raw())['contents']
+            # read_doc_content(doc_id)
+            ctx = doc_contents[doc_id]['contents']
+        # print(f'{ctx}')
+            
+
+        lock = Lock()
         if question_id not in retrieval:
-            retrieval[question_id] = {'question': question, 'answers': answers, 'contexts': []}
+            # lock.acquire()
+            retrieval[question_id] = {'question': question, 'answers': answers, 'contexts': manager.list()}
+            # lock.release()
+            
+
         title, text = ctx.split('\n')
         answer_exist = has_answers(text, answers, tokenizer, args.regex)
+        
         if args.store_raw:
             retrieval[question_id]['contexts'].append(
                 {'docid': doc_id,
@@ -112,30 +111,84 @@ if __name__ == '__main__':
                 'has_answer': answer_exist}
             )
         else:
+            # lock.acquire()
             retrieval[question_id]['contexts'].append(
                 {'docid': doc_id, 'score': score, 'has_answer': answer_exist}
             )
+            # lock.release()
+        # print(retrieval[question_id]['contexts'])
+        # print(f'{question_id} {question} {doc_id} {score} {answer_exist}')
 
-    # 定义处理范围的函数
-    def process_range(start, end):
-        with open(args.input) as f_in:
-            lines = f_in.readlines()[start:end]
-            for line in tqdm(lines):
-                process_line(line)
+    def process_lines(start_line, end_line):
+        lines = read_lines(start_line, end_line)
+        for line in lines:
+            process_line(line, retrieval)
+        
+    num_threads = 8
+    num_processes = num_threads
+    lines_per_worker = 0  # 每个线程处理的行数
+    k = 0
 
+    with open(args.input, 'r') as file:
+        while True:
+            line = file.readline()
+            question_id, _, doc_id, _, score, _ = line.split()
+            if int(question_id) == 0:
+                k += 1
+            else:
+                break
 
+    score_dict = {}
 
-    # 定义线程数量和每个线程处理的行数
-    num_threads = 2
-    lines_per_thread = len(data) // num_threads
+    with open(args.input) as file:
+        total_lines = sum(1 for _ in file)
+    total_lines = total_lines // 4
+    print(f'total_lines: {total_lines}')
+    lines_per_worker = int((int((total_lines + num_processes - 1) / num_processes) + k - 1) / k) * k
+    print(f'lines_per_worker: {lines_per_worker}')
 
-    # with ThreadPoolExecutor() as executor:
-    #     # 启动并发线程处理
-    #     for i in range(num_threads):
-    #         start = i * lines_per_thread
-    #         end = start + lines_per_thread
-    #         if i == num_threads - 1:
-    #             end = len(data)  # 最后一个线程处理剩余的行数
-    #         executor.submit(process_range, start, end)
+    pre = read_lines(0, total_lines)
+    for line in pre:
+        question_id, _, doc_id, _, score, _ = line.strip().split()
+        question_id = int(question_id)
+        read_doc_content(doc_id)
 
-    # json.dump(retrieval, open(args.output, 'w'), indent=4, ensure_ascii=False)
+    print('Starting to process lines...')
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=num_processes) as executor:
+    #     futures = []
+    #     progress_bar = tqdm(total=total_lines)
+
+    #     for i in range(0, total_lines, lines_per_worker):
+    #         start_line = i
+    #         end_line = min(i + lines_per_worker, total_lines)
+    #         futures.append(executor.submit(process_lines, start_line, end_line, score_dict))
+    #         progress_bar.update(lines_per_worker)
+
+    #     concurrent.futures.wait(futures)
+
+    #     progress_bar.close()
+
+    # score_dict = sorted(score_dict.items(), key=lambda x: int(x[0]))
+    
+    processes = []
+    progress_bar = tqdm(total=total_lines)
+    
+    for i in range(0, total_lines, lines_per_worker):
+        start_line = i
+        end_line = min(i + lines_per_worker, total_lines)
+        p = Process(target=process_lines, args=(start_line, end_line))
+        p.start()
+        processes.append(p)
+        progress_bar.update(lines_per_worker)
+    
+    for p in processes:
+        p.join()
+    
+    progress_bar.close()
+
+    # retrieval = dict(sorted(retrieval.items(), key=lambda x: int(x[0])))
+    retrieval_dict = dict(retrieval)
+    for question_id in retrieval_dict:
+        retrieval_dict[question_id]['contexts'] = list(retrieval_dict[question_id]['contexts'])
+
+    json.dump(retrieval_dict, open(args.output, 'w'), indent=4, ensure_ascii=False)

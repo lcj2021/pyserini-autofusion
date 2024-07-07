@@ -26,6 +26,7 @@ import re
 import unicodedata
 from tqdm import tqdm
 import numpy as np
+import torch.nn.functional as F
 
 import regex
 
@@ -238,16 +239,16 @@ def has_answers(text, answers, tokenizer, regex=False):
     return False
 
 
-def evaluate_retrieval(retrieval_file, topk, regex=False):
+def evaluate_retrieval(retrieval_file, topk, alpha, qid_alpha_numhit, regex=False):
     tokenizer = SimpleTokenizer()
-    retrieval = json.load(open(retrieval_file))
-    accuracy = { k : [] for k in topk }
+    retrieval_file_path = retrieval_file.replace('?', f'{round(alpha, 2)}')
+    retrieval = json.load(open(retrieval_file_path))
     max_k = max(topk)
 
-    for qid in tqdm(list(retrieval.keys())):
+    for idx, qid in tqdm(enumerate(list(retrieval.keys()))):
+
         answers = retrieval[qid]['answers']
         contexts = retrieval[qid]['contexts']
-        has_ans_idx = max_k  # first index in contexts that has answers
 
         num_hit = 0
         for idx, ctx in enumerate(contexts):
@@ -257,29 +258,191 @@ def evaluate_retrieval(retrieval_file, topk, regex=False):
                 if ctx['has_answer']:
                     has_ans_idx = idx
                     num_hit += 1
-                    break
             else:
                 text = ctx['text'].split('\n')[1]  # [0] is title, [1] is text
                 if has_answers(text, answers, tokenizer, regex):
                     has_ans_idx = idx
                     num_hit += 1
-                    break
+        qid = int(qid)
+        qid_alpha_numhit[qid][alpha] = num_hit
 
-        for k in topk:
-            if num_hit == 0:
-              print(f'qid: {qid}\tTop{k}\thas_answer: {num_hit}')
-            accuracy[k].append(0 if has_ans_idx >= k else 1)
+def evaluate_retrieval_rrf(retrieval_file, topk, alpha, qid_alpha_numhit, regex=False):
+    tokenizer = SimpleTokenizer()
+    retrieval_file_path = retrieval_file.replace('?', 'rrf')
+    retrieval = json.load(open(retrieval_file_path))
+    max_k = max(topk)
 
-    for k in topk:
-        print(f'Top{k}\taccuracy: {np.mean(accuracy[k]):.4f}')
+    for idx, qid in tqdm(enumerate(list(retrieval.keys()))):
+
+        answers = retrieval[qid]['answers']
+        contexts = retrieval[qid]['contexts']
+
+        num_hit = 0
+        for idx, ctx in enumerate(contexts):
+            if idx >= max_k:
+                break
+            if 'has_answer' in ctx:
+                if ctx['has_answer']:
+                    has_ans_idx = idx
+                    num_hit += 1
+            else:
+                text = ctx['text'].split('\n')[1]  # [0] is title, [1] is text
+                if has_answers(text, answers, tokenizer, regex):
+                    has_ans_idx = idx
+                    num_hit += 1
+        qid = int(qid)
+        qid_alpha_numhit[qid][alpha] = num_hit
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--retrieval', type=str, metavar='path',
-                        help="Path to retrieval output file.")
+    parser.add_argument('--retrieval', type=str, help="Path to retrieval output file.")
     parser.add_argument('--topk', type=int, nargs='+', help="topk to evaluate")
     parser.add_argument('--regex', action='store_true', default=False, help="regex match")
+    parser.add_argument('--traindata', default=True, help="regex match")
     args = parser.parse_args()
 
-    evaluate_retrieval(args.retrieval, args.topk, args.regex)
+    # write code to load retrieval file at alpha 0
+    retrieval_file_0_path = args.retrieval.replace('?', '0.0')
+    # print(retrieval_file_0_path)
+
+
+    retrieval_file_0 = json.load(open(retrieval_file_0_path))
+    nq = len(retrieval_file_0)
+
+    # print(f'Evaluating {nq} queries')
+
+    """
+    alphas estimate from np.arange(0, 1.05, 0.05), using softmax
+    """
+
+    # # key: qid, value: {alpha: answer_hit}
+    # qid_alpha_numhit = [{k: {} for k in np.arange(0, 1.05, 0.05)} for _ in range(nq)]
+
+    # for alpha in tqdm(np.arange(0, 1.05, 0.05)):
+    #     evaluate_retrieval(args.retrieval, args.topk, alpha, qid_alpha_numhit, args.regex)
+
+    # final_qid_alpha_numhit = []
+    # avg_alpha = 0.
+    
+    # num_c = 7
+    # num_critical = [0] * num_c
+    # critical_hits = []
+    # coverage = 0.
+    # hard_fail = 0
+    # for qid, alpha_numhit in enumerate(qid_alpha_numhit):
+    #     total_hit = 0
+    #     weighted_alpha = 0.
+    #     max_answer_hit = max(alpha_numhit.values())
+    #     total_hit = sum(alpha_numhit.values())
+
+    #     hits = [hit for _, hit in alpha_numhit.items()]
+    #     alphas = [alpha for alpha, _ in alpha_numhit.items()]
+
+    #     hits_np = np.array(hits).astype(float)
+    #     alphas_np = np.array(alphas).astype(float)
+        
+    #     is_critical = False
+    #     for c in range(0, num_c):
+    #         if np.sum(hits_np != 0) == c + 1:
+    #             is_critical = True
+    #             num_critical[c] += 1
+    #             critical_hits.append(alpha_numhit.values())
+    #     # if not is_critical:
+    #     coverage += alpha_numhit[0.5] > 0
+
+    #     if total_hit == 0:
+    #         weighted_alpha = 0.5
+    #         final_qid_alpha_numhit.append((qid, weighted_alpha, total_hit))
+
+    #         # print(f'qid: {qid}\thits: {list(hits)}\tsoftmax_hits: {list(softmax_hits)}\tweighted_alpha: {weighted_alpha}')
+    #         avg_alpha += weighted_alpha
+    #         hard_fail += 1
+    #         continue
+
+    #     hits_np /= np.max(hits_np)
+    #     hits_np[hits_np == 0] -= 1e6
+
+    #     # softmax hits_np:
+    #     softmax_hits = np.exp(hits_np) / np.sum(np.exp(hits_np))
+    #     softmax_hits = np.round(softmax_hits, decimals=2)
+
+    #     weighted_alpha = np.dot(softmax_hits, alphas_np)
+
+    #     weighted_alpha = round(weighted_alpha, 2)
+
+    #     # max_index = np.argmax(hits)
+    #     # weighted_alpha = round(alphas[max_index], 2)
+    #     # assert hits[max_index] > 0
+
+    #     final_qid_alpha_numhit.append((qid, weighted_alpha, total_hit))
+
+    #     # print(f'qid: {qid}\thits: {list(hits)}\tsoftmax_hits: {list(softmax_hits)}\tweighted_alpha: {weighted_alpha}')
+    #     avg_alpha += weighted_alpha
+    
+    # # avg_alpha /= len(final_qid_alpha_numhit)
+    # # print(f'Average alpha: {avg_alpha:.4f}')
+
+    # # coverage /= (len(qid_alpha_numhit))
+    # # print(f'Coverage: {coverage:.4f}')
+
+    # # for c in range(0, num_c):
+    # #     print(f'Num critical[{c + 1}]: {num_critical[c]}')
+    # # for critical_alpha in critical_hits:
+    # #     print(f'Critical alpha: {critical_alpha}')
+    
+    # for qid, best_alpha, answer_hit in final_qid_alpha_numhit:
+    #     print(f'{qid}\t{best_alpha}\t{answer_hit}')
+    # # print(f'Hard fail: {hard_fail}')
+    # # print(f'total: {len(final_qid_alpha_numhit)}')
+
+
+    """
+    alphas only in [0, 0.5, 1]
+    """
+
+
+    # key: qid, value: {alpha: answer_hit}
+    qid_alpha_numhit = [{k: {} for k in np.arange(0, 1.05, 0.5)} for _ in range(nq)]
+
+    for alpha in tqdm(np.arange(0, 1.05, 0.5)):
+        if alpha != 0.5:
+            evaluate_retrieval(args.retrieval, args.topk, alpha, qid_alpha_numhit, args.regex)
+        else:
+            evaluate_retrieval_rrf(args.retrieval, args.topk, alpha, qid_alpha_numhit, args.regex)
+
+    num_classes = [0] * 3
+    final_qid_alpha_numhit = []
+    for qid, alpha_numhit in enumerate(qid_alpha_numhit):
+        total_hit = 0
+        label_class = -1
+
+        hits = [1 if hit else 0 for _, hit in alpha_numhit.items()]
+        total_hit = sum(hits)
+        alphas = [alpha for alpha, _ in alpha_numhit.items()]
+
+        if total_hit == 0:
+            label_class = 1
+            num_classes[label_class] += 1
+            final_qid_alpha_numhit.append((qid, label_class, total_hit))
+
+            print(f'qid: {qid}\thits: {list(hits)}')
+            continue
+        if total_hit == 1:
+            label_class = hits.index(1)
+        elif total_hit == 2:
+            zero_index = hits.index(0)
+            label_class = 2 - zero_index
+        elif total_hit == 3:
+            label_class = 1
+        else:
+            raise Exception('total_hit should be 0, 1, 2, or 3')
+
+        num_classes[label_class] += 1
+        final_qid_alpha_numhit.append((qid, label_class, total_hit))
+
+        print(f'qid: {qid}\thits: {list(hits)}')
+    
+    # for qid, best_alpha, answer_hit in final_qid_alpha_numhit:
+    #     print(f'{qid}\t{best_alpha}\t{answer_hit}')
+    # print(f'Num classes: {num_classes}')

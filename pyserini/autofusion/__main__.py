@@ -16,7 +16,7 @@
 
 import argparse
 from ._base import FusionMethod
-from pyserini.autofusion import average, interpolation, reciprocal_rank_fusion
+from pyserini.autofusion import average, interpolation, reciprocal_rank_fusion, interpolation_custom, reciprocal_rank_fusion_custom, half_tops_custom
 from ..trectools import TrecRun
 
 
@@ -29,6 +29,7 @@ parser.add_argument('--method', type=FusionMethod, default=FusionMethod.RRF, hel
 parser.add_argument('--rrf.k', dest='rrf_k', type=int, default=60,
                     help="Parameter k needed for reciprocal rank fusion.")
 parser.add_argument('--alpha', type=float, default=0.5, required=False, help='Alpha value used for interpolation.')
+parser.add_argument('--alphafile', type=str, required=False, help='Alpha file path used for interpolation.')
 parser.add_argument('--depth', type=int, default=1000, required=False, help='Pool depth per topic.')
 parser.add_argument('--k', type=int, default=1000, required=False, help='Number of documents to output per topic.')
 parser.add_argument('--nq', type=float, default=12, required=False, help='Number of queries for fusion.')
@@ -44,6 +45,11 @@ elif args.method == FusionMethod.INTERPOLATION:
     fused_run = interpolation(trec_runs, alpha=args.alpha, depth=args.depth, nq=args.nq, k=args.k)
 elif args.method == FusionMethod.AVERAGE:
     fused_run = average(trec_runs, depth=args.depth, k=args.k)
+elif args.method == FusionMethod.CUSTOM:
+    # fused_run = interpolation_custom(trec_runs, path=args.alphafile, depth=args.depth, nq=args.nq, k=args.k)
+    fused_run = reciprocal_rank_fusion_custom(trec_runs, path=args.alphafile, depth=args.depth, nq=args.nq, k=args.k)
+elif args.method == FusionMethod.HALFTOPS:
+    fused_run = half_tops_custom(trec_runs, path=args.alphafile, depth=args.depth, nq=args.nq, k=args.k)
 else:
     raise NotImplementedError(f'Fusion method {args.method} not implemented.')
 

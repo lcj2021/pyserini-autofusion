@@ -272,7 +272,7 @@ class TrecRun:
                     for rank, (docid, score) in enumerate(sorted_doc_scores, start=1)
                 ]
 
-            max_workers = max(len(topics)/10, 1)
+            max_workers = max(min(24, len(topics)/10), 1)
             with ThreadPoolExecutor(max_workers=int(max_workers)) as exec:
                 results = list(exec.map(merge_topic, topics))
 

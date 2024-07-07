@@ -295,6 +295,16 @@ QUERY_INFO = {
         "total_queries": 11313,
         "downloaded": False
     },
+    "dpr_multi-trivia-train": {
+        "description": "TriviaQA train set questions encoded by DPR question encoder trained on multiset",
+        "urls": [
+            "https://github.com/castorini/pyserini-data/raw/main/encoded-queries/query-embedding-dpr_multi-trivia-train-20240501-9323ec.tar.gz",
+        ],
+        "md5": "0e59bdfa7d7afe341f79d2b958f808cf",
+        "size (bytes)": 251566748,
+        "total_queries": 78785,
+        "downloaded": False
+    },
     "ance_multi-trivia-dev": {
         "description": "TriviaQA dev set questions encoded by ANCE question encoder trained on multiset",
         "urls": [
@@ -325,6 +335,16 @@ QUERY_INFO = {
         "total_queries": 2032,
         "downloaded": False
     },
+    "dpr_multi-wq-train": {
+        "description": "Web Questions train set questions encoded by DPR question encoder trained on multiset",
+        "urls": [
+            "https://github.com/castorini/pyserini-data/raw/main/encoded-queries/query-embedding-dpr_multi-wq-train-20240508-9323ec.tar.gz",
+        ],
+        "md5": "feaa4458c033613812bb9b84ff015669",
+        "size (bytes)": 428451,
+        "total_queries": 3778,
+        "downloaded": False
+    },
     "dpr_multi-squad-test": {
         "description": "SQUAD dev set questions encoded by DPR question encoder trained on multiset",
         "urls": [
@@ -335,6 +355,16 @@ QUERY_INFO = {
         "total_queries": 10570,
         "downloaded": False
     },
+    "dpr_multi-squad-train": {
+        "description": "SQUAD v1.1 train set questions encoded by DPR question encoder trained on multiset",
+        "urls": [
+            "https://github.com/castorini/pyserini-data/raw/main/encoded-queries/query-embedding-dpr_multi-squad-test-20240626-9323ec.tar.gz",
+        ],
+        "md5": "2b432367ce79a17043ccd0dbf910620d",
+        "size (bytes)": 9900930,
+        "total_queries": 87599,
+        "downloaded": False
+    },
     "dpr_multi-curated-test": {
         "description": "CuratedTREC test set questions encoded by DPR question encoder trained on multiset",
         "urls": [
@@ -343,6 +373,76 @@ QUERY_INFO = {
         "md5": "d1737d3ec5a080d93350ae76b02c7fd1",
         "size (bytes)": 1995280,
         "total_queries": 694,
+        "downloaded": False
+    },
+    "dpr_multi-curated-train": {
+        "description": "CuratedTREC train set questions encoded by DPR question encoder trained on multiset",
+        "urls": [
+            "https://github.com/castorini/pyserini-data/raw/main/encoded-queries/query-embedding-dpr_multi-curated-train-20240701-9323ec.tar.gz",
+        ],
+        "md5": "ba96e83f1b06bb6d48fc3616a16dff2f",
+        "size (bytes)": 3534303,
+        "total_queries": 1125,
+        "downloaded": False
+    },
+    "dpr_multi-hotpot-train-slim": {
+        "description": "hotpot train slim set questions encoded by DPR question encoder trained on multiset",
+        "urls": [
+            "https://github.com/castorini/pyserini-data/raw/main/encoded-queries/query-embedding-dpr_multi-hotpot-train-slim-20240702-9323ec.tar.gz",
+        ],
+        "md5": "cca8e6838206c464373f029eeee09160",
+        "size (bytes)": 3534303,
+        "total_queries": 1125,
+        "downloaded": False
+    },
+    "dpr_multi-hotpot-train": {
+        "description": "hotpot train set questions encoded by DPR question encoder trained on multiset",
+        "urls": [
+            "https://github.com/castorini/pyserini-data/raw/main/encoded-queries/query-embedding-dpr_multi-hotpot-train-20240703-9323ec.tar.gz",
+        ],
+        "md5": "70c4afc6224e6546b03696a0948bf685",
+        "size (bytes)": 3534303,
+        "total_queries": 1125,
+        "downloaded": False
+    },
+    "dpr_multi-hotpot-dev": {
+        "description": "hotpot develop set questions encoded by DPR question encoder trained on multiset",
+        "urls": [
+            "https://github.com/castorini/pyserini-data/raw/main/encoded-queries/query-embedding-dpr_multi-hotpot-dev-20240703-9323ec.tar.gz",
+        ],
+        "md5": "c680293d137b97f87794e1519c81e4f9",
+        "size (bytes)": 3534303,
+        "total_queries": 1125,
+        "downloaded": False
+    },
+    "dpr_multi-search-train": {
+        "description": "searchQA train set questions encoded by DPR question encoder trained on multiset",
+        "urls": [
+            "https://github.com/castorini/pyserini-data/raw/main/encoded-queries/query-embedding-dpr_multi-search-train-20240705-9323ec.tar.gz",
+        ],
+        "md5": "8fcd1315c203b40a62c484a706b68748",
+        "size (bytes)": 3534303,
+        "total_queries": 1125,
+        "downloaded": False
+    },
+    "dpr_multi-search-train-slim": {
+        "description": "searchQA train-slim set questions encoded by DPR question encoder trained on multiset",
+        "urls": [
+            "https://github.com/castorini/pyserini-data/raw/main/encoded-queries/query-embedding-dpr_multi-search-train-slim-20240704-9323ec.tar.gz",
+        ],
+        "md5": "9d851cee13a62eab7349058688c7d5c8",
+        "size (bytes)": 3534303,
+        "total_queries": 1125,
+        "downloaded": False
+    },
+    "dpr_multi-search-val": {
+        "description": "searchQA val set questions encoded by DPR question encoder trained on multiset",
+        "urls": [
+            "https://github.com/castorini/pyserini-data/raw/main/encoded-queries/query-embedding-dpr_multi-search-dev-20240704-9323ec.tar.gz",
+        ],
+        "md5": "53665ec5d64292af49c398c1b26b6f80",
+        "size (bytes)": 3534303,
+        "total_queries": 1125,
         "downloaded": False
     },
     "dpr_single_nq-nq-dev": {

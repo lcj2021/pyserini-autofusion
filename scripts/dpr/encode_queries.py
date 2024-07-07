@@ -72,6 +72,7 @@ if __name__ == '__main__':
     if qa_parser is None:
         print(f'No QA parser defined for file format: {args.format}, or format not match')
     for qid, (question, answers) in enumerate(tqdm(list(qa_parser(args.input)))):
+        question = question.strip()
         embeddings['id'].append(qid)
         embeddings['text'].append(question)
         embeddings['embedding'].append(encode_query(question, tokenizer, model, args.device))

@@ -19,3 +19,15 @@ runs/
 
 # logs should also be ignored
 logs/
+
+# pkl files should be ignored
+*.pkl
+
+# json, txt, and csv files should be ignored
+*.json
+*.jsonl
+*.txt
+*.csv
+*.parquet
+*.indexes
+*.trec

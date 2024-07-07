@@ -56,7 +56,7 @@ class QueryEncoder:
             self.has_encoded_query = True
 
     def encode(self, query: str):
-        return self.embedding[query]
+        return self.embedding[query.strip()]
 
     @classmethod
     def load_encoded_queries(cls, encoded_query_name: str):
@@ -85,7 +85,7 @@ class QueryEncoder:
     @staticmethod
     def _load_embeddings(encoded_query_dir):
         df = pd.read_pickle(os.path.join(encoded_query_dir, 'embedding.pkl'))
-        return dict(zip(df['text'].tolist(), df['embedding'].tolist()))
+        return dict(zip([text.strip() for text in df['text'].tolist()], df['embedding'].tolist()))
 
 class ClipQueryEncoder(QueryEncoder):
     """Encodes queries using a CLIP model, supporting both images and texts."""
